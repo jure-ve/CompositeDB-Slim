@@ -37,7 +37,24 @@ class UserController
 
     public function create(Request $request, Response $response): Response
     {
-        $data = $request->getParsedBody();
+    // Verificar que el Content-Type sea application/json
+        if ($request->getHeaderLine('Content-Type') !== 'application/json') {
+            $response->getBody()->write(json_encode([
+                'error' => 'El Content-Type debe ser application/json'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(415);
+        }
+
+        // Obtener el cuerpo de la solicitud como JSON
+        $data = json_decode($request->getBody()->getContents(), true);
+
+        // Validar si el JSON es válido
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $response->getBody()->write(json_encode([
+                'error' => 'JSON inválido en la solicitud'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
 
         // Validación básica
         if (empty($data['email']) || !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
